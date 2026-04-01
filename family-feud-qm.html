@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Family Feud — Quiz Master</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;600;700&family=Barlow+Condensed:wght@600;700;900&display=swap" rel="stylesheet">
+<style>
+/* ─── BASE ───────────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#07101f; --blue:#0d1c42; --mid:#122057; --tile:#17297a;
+  --gold:#f5a82a; --gold2:#ffd878; --red:#c0392b; --green:#1e9e56;
+  --white:#eef2ff; --muted:rgba(238,242,255,.5);
+}
+html,body{height:100%;margin:0;padding:0;background:#0b1528;color:var(--white);font-family:'Barlow',sans-serif;overflow:hidden}
+button{cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:.08em;border:none;transition:all .15s}
+
+/* ─── BUTTONS ────────────────────────────────────────────── */
+.btn{padding:.6rem 1.5rem;border-radius:6px;font-size:1rem;text-transform:uppercase}
+.btn-lg{font-size:1.25rem;padding:.85rem 2.5rem}
+.btn-sm{font-size:.8rem;padding:.4rem .9rem}
+.btn-gold{background:linear-gradient(135deg,var(--gold),#e0930a);color:#07101f}
+.btn-gold:hover{filter:brightness(1.12)}
+.btn-outline{background:transparent;color:var(--white);border:2px solid rgba(255,255,255,.25)}
+.btn-outline:hover{border-color:var(--gold);color:var(--gold)}
+.btn-red{background:var(--red);color:#fff}
+.btn-red:hover{background:#a72d22}
+.btn-green{background:var(--green);color:#fff}
+.btn-green:hover{background:#178045}
+.btn-blue{background:#2563eb;color:#fff}
+.btn-blue:hover{background:#1d55c9}
+.btn-disabled{opacity:.35;pointer-events:none}
+
+/* ─── LAYOUT ─────────────────────────────────────────────── */
+.qm-wrap{display:flex;flex-direction:column;height:100vh;background:#0b1528;border-left:2px solid rgba(245,168,42,.3)}
+
+/* ─── QM HEADER ──────────────────────────────────────────── */
+.qm-head{display:flex;align-items:center;justify-content:space-between;padding:.8rem 1rem;background:rgba(245,168,42,.1);border-bottom:1px solid rgba(245,168,42,.2);flex-shrink:0}
+.qm-head-title{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:var(--gold);letter-spacing:.08em}
+.qm-head-sub{font-size:.65rem;letter-spacing:.15em;color:var(--muted);text-transform:uppercase;margin-top:.1rem}
+.qm-status{display:flex;align-items:center;gap:.4rem;font-family:'Barlow Condensed',sans-serif;font-size:.7rem;letter-spacing:.1em;text-transform:uppercase}
+.qm-status-dot{width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.qm-status-dot.live{background:#22c55e;box-shadow:0 0 6px rgba(34,197,94,.6)}
+.qm-status-dot.waiting{background:var(--gold);animation:pulse 1.5s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.4}50%{opacity:1}}
+.qm-reset-btn{background:rgba(192,57,43,.2);color:rgba(238,242,255,.5);border:1px solid rgba(192,57,43,.3);border-radius:5px;padding:.2rem .55rem;font-size:.9rem;cursor:pointer;transition:all .15s;line-height:1}
+.qm-reset-btn:hover{background:rgba(192,57,43,.45);color:#fff;border-color:var(--red)}
+
+/* ─── QM BODY ────────────────────────────────────────────── */
+.qm-body{flex:1;overflow-y:auto;padding:.8rem}
+.qm-body::-webkit-scrollbar{width:5px}
+.qm-body::-webkit-scrollbar-track{background:transparent}
+.qm-body::-webkit-scrollbar-thumb{background:rgba(245,168,42,.3);border-radius:3px}
+
+/* ─── QM SECTIONS ────────────────────────────────────────── */
+.qm-section{margin-bottom:1.2rem}
+.qm-sec-title{font-family:'Barlow Condensed',sans-serif;font-size:.65rem;letter-spacing:.22em;color:var(--gold);text-transform:uppercase;margin-bottom:.5rem;border-bottom:1px solid rgba(245,168,42,.15);padding-bottom:.3rem}
+.qm-answer-row{display:flex;align-items:center;gap:.5rem;background:rgba(255,255,255,.05);border-radius:6px;padding:.5rem .7rem;margin-bottom:.4rem}
+.qma-num{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:var(--gold);min-width:20px;text-align:center}
+.qma-text{flex:1;font-size:.85rem;font-weight:600;line-height:1.2}
+.qma-pts{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:var(--gold2);min-width:30px;text-align:right}
+.qma-revealed{opacity:.3;text-decoration:line-through}
+.qm-reveal-btn{font-family:'Barlow Condensed',sans-serif;font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;background:var(--green);color:#fff;border-radius:4px;padding:.2rem .5rem;flex-shrink:0}
+.qm-reveal-btn:hover{background:#178045}
+.qm-reveal-btn.done{background:rgba(255,255,255,.1);color:var(--muted);pointer-events:none}
+
+.qm-ctrl-row{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.5rem}
+.qm-ctrl-row .btn{flex:1;min-width:80px;text-align:center}
+.qm-divider{height:1px;background:rgba(255,255,255,.08);margin:.8rem 0}
+.qm-note{font-size:.75rem;color:var(--muted);line-height:1.4;background:rgba(255,255,255,.04);border-radius:5px;padding:.5rem .7rem;margin-bottom:.5rem}
+.qm-ans-pick .btn{display:block;width:100%;text-align:left;margin-bottom:.4rem;padding:.5rem .8rem;font-size:.85rem;white-space:normal}
+
+.qm-score-row{display:flex;gap:.5rem;margin-bottom:.4rem}
+.qm-score-box{flex:1;background:rgba(255,255,255,.06);border-radius:6px;padding:.4rem .6rem;text-align:center}
+.qm-score-name{font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.qm-score-val{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:var(--gold);line-height:1}
+.qm-round-pts{font-family:'Bebas Neue',sans-serif;font-size:2rem;color:var(--gold2);text-align:center;line-height:1}
+.qm-round-pts-lbl{font-size:.6rem;letter-spacing:.18em;color:var(--muted);text-align:center;text-transform:uppercase;margin-bottom:.4rem}
+
+/* ─── Q PICKER ───────────────────────────────────────────── */
+.q-pick-list{display:flex;flex-direction:column;gap:.4rem}
+.q-pick-item{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:.5rem .7rem;cursor:pointer;font-size:.78rem;line-height:1.3;transition:all .15s}
+.q-pick-item:hover{border-color:var(--gold);background:rgba(245,168,42,.08)}
+.q-pick-item.used{opacity:.25;pointer-events:none;text-decoration:line-through}
+
+/* ─── WAITING SCREEN ─────────────────────────────────────── */
+.qm-waiting{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;padding:2rem;gap:1rem}
+.qm-waiting-icon{font-size:3.5rem;opacity:.6}
+.qm-waiting-title{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;color:var(--gold);letter-spacing:.08em}
+.qm-waiting-sub{font-size:.85rem;color:var(--muted);line-height:1.5}
+.qm-waiting-hint{font-size:.72rem;color:rgba(238,242,255,.3);margin-top:.5rem}
+
+/* ─── RESPONSIVE ─────────────────────────────────────────── */
+@media(min-width:600px){
+  .qm-wrap{max-width:420px;margin:0 auto;border-left:2px solid rgba(245,168,42,.3);border-right:2px solid rgba(245,168,42,.3)}
+}
+</style>
+</head>
+<body>
+
+<div class="qm-wrap">
+
+  <!-- Header -->
+  <div class="qm-head">
+    <div>
+      <div class="qm-head-title">🎙 QUIZ MASTER</div>
+      <div class="qm-head-sub" id="qm-head-sub">Control Panel</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:.6rem">
+      <div class="qm-status">
+        <div class="qm-status-dot" id="status-dot"></div>
+        <span id="status-label">Connecting…</span>
+      </div>
+      <button class="qm-reset-btn" onclick="showResetConfirm()" title="Reset game">↺</button>
+    </div>
+  </div>
+
+  <!-- Dynamic body -->
+  <div class="qm-body" id="qm-body">
+    <div class="qm-waiting">
+      <div class="qm-waiting-icon">🎙</div>
+      <div class="qm-waiting-title">QUIZ MASTER READY</div>
+      <div class="qm-waiting-sub">Open the main board and start a match.<br>This panel will sync automatically.</div>
+      <div class="qm-waiting-hint">Keep both windows open on the same device or same local network.</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   QUESTION BANK — identical copy to main board
+═══════════════════════════════════════════════════════════ */
+const Q_BANK = [
+  {q:"Name something you might do at work to convince your boss you're too sick to be there.",a:[{t:"Cough violently",p:44},{t:"Vomit / fake throwing up",p:38},{t:"Sneeze maniacally",p:9},{t:"Lie on the desk / look pale",p:4}]},
+  {q:"Name something you'd hate to find out was living in the walls of your house.",a:[{t:"Termites / bugs",p:45},{t:"Rats / mice",p:38},{t:"Snakes",p:8},{t:"Bats",p:4}]},
+  {q:"Name a musical instrument perfect for someone full of hot air.",a:[{t:"Tuba",p:56},{t:"Trumpet",p:17},{t:"Trombone",p:8},{t:"Bagpipes",p:6}]},
+  {q:"Name a gesture a mother would be shocked to see her baby making in an ultrasound.",a:[{t:"Flipping the bird",p:63},{t:"Waving hello",p:10},{t:"Peace sign",p:9},{t:"Thumbs down",p:7}]},
+  {q:"Name a gripe about your computer you could also have about a partner.",a:[{t:"Too slow",p:68},{t:"Doesn't work / always crashing",p:20},{t:"Won't follow commands",p:5},{t:"Makes too much noise",p:3}]},
+  {q:"Name a place where it's perfectly fine to sing — even if you're terrible.",a:[{t:"In the shower / bath",p:61},{t:"At church / a religious service",p:24},{t:"At a karaoke bar",p:8},{t:"In the car",p:4}]},
+  {q:"Without a tongue, you couldn't lick what?",a:[{t:"Ice cream / popsicle",p:62},{t:"A lollipop",p:22},{t:"Yourself / your nose",p:7},{t:"A stamp or envelope",p:4}]},
+  {q:"Name something a man takes along when shopping with his wife.",a:[{t:"Cash / wallet / credit cards",p:55},{t:"His phone / earphones",p:24},{t:"Something to read",p:13},{t:"A friend for company",p:4}]},
+  {q:"Name something cats do when fighting that rival humans might also do.",a:[{t:"Scratch / claw",p:65},{t:"Screech / hiss",p:14},{t:"Bite",p:12},{t:"Pull hair",p:5}]},
+  {q:"Name something an elderly person might love that's wrinkled.",a:[{t:"Their partner / spouse",p:66},{t:"Prunes / dried fruit",p:20},{t:"Old comfy clothes",p:7},{t:"Old photographs",p:4}]},
+  {q:"In a crime thriller, name something the villain urgently needs to get rid of.",a:[{t:"The weapon",p:58},{t:"The body",p:26},{t:"Blood / other evidence",p:7},{t:"Witnesses",p:5}]},
+  {q:"Name a reason a much younger man might marry a much older woman.",a:[{t:"She has a lot of money",p:87},{t:"He genuinely loves her",p:5},{t:"She's experienced / exciting",p:4},{t:"For a visa or citizenship",p:3}]},
+  {q:"Name something a baby does that would be completely unacceptable in a flatmate.",a:[{t:"Cry / wail at 3 a.m.",p:40},{t:"Soil / wet themselves",p:28},{t:"Vomit on you",p:10},{t:"Drool on everything",p:6}]},
+  {q:"Name something you love doing when you're completely alone.",a:[{t:"Reading",p:28},{t:"Watching TV / films",p:26},{t:"Taking a long bath",p:18},{t:"Dancing like nobody's watching",p:12}]},
+  {q:"Name something a housefly dies from that you'd hate as your own cause of death.",a:[{t:"A flyswatter",p:74},{t:"Bug spray / insecticide",p:7},{t:"Starvation",p:6},{t:"Getting stuck on flypaper",p:4}]},
+  {q:"Name something you have to squeeze really hard before anything comes out.",a:[{t:"A lemon / citrus fruit",p:28},{t:"Ketchup / mustard bottle",p:25},{t:"Toothpaste",p:20},{t:"A spot or pimple",p:14}]},
+  {q:"Name something a man wears trying to impress women that actually repels them.",a:[{t:"Way too much cologne",p:64},{t:"A Speedo",p:10},{t:"A toupee / terrible wig",p:8},{t:"An unbuttoned shirt",p:6}]},
+  {q:"Name something that could ruin a romantic horse-drawn carriage ride.",a:[{t:"Horse relieves itself near you",p:38},{t:"Horse has terrible gas / flatulence",p:26},{t:"Rain or a storm starts",p:12},{t:"The horse bolts or runs off",p:8}]},
+  {q:"Name information you don't want but expect your best friend to tell you.",a:[{t:"Your partner is cheating",p:38},{t:"You've put on weight / look bad",p:32},{t:"You have food stuck in your teeth",p:10},{t:"You smell bad",p:8}]},
+  {q:"Name an occupation where the more attractive you are, the more money you make.",a:[{t:"Exotic dancer / stripper",p:40},{t:"Model",p:26},{t:"Actor / entertainer",p:12},{t:"Salesperson",p:8}]},
+  {q:"Name someone a cool teenager would be mortified to see show up at their party.",a:[{t:"Their parents",p:58},{t:"An embarrassing celebrity / person",p:12},{t:"The school nerd / geek",p:10},{t:"A teacher",p:8}]},
+  {q:"If a man isn't attractive, he'd better have a beautiful ___.",a:[{t:"Personality",p:34},{t:"Smile",p:18},{t:"Heart / soul",p:18},{t:"Sense of humour",p:12}]},
+  {q:"Name something you'd hate to smell when climbing into your date's car.",a:[{t:"Rubbish / old food",p:30},{t:"Cigarette / cigar smoke",p:22},{t:"Fresh flatulence",p:16},{t:"An overpowering air freshener",p:10}]},
+  {q:"Name something a woman brings to bed after a tough breakup.",a:[{t:"Food / ice cream / chocolate",p:40},{t:"Her pet",p:16},{t:"A stuffed animal / teddy bear",p:12},{t:"A good book or magazine",p:8}]},
+  {q:"Name something surprising grandparents might still do if they were former hippies.",a:[{t:"Smoke cannabis",p:74},{t:"Dance wildly to old music",p:8},{t:"Kiss passionately in public",p:5},{t:"Wear tie-dye or flower crowns",p:3}]},
+  {q:"Name a sign your partner might secretly be turning into a cat.",a:[{t:"Meowing or purring",p:38},{t:"Clawing and scratching everything",p:22},{t:"Growing whiskers",p:18},{t:"Sleeping all day in a sunbeam",p:10}]},
+  {q:"Name something a married man gets in trouble for telling others about his wife.",a:[{t:"Her weight / measurements",p:42},{t:"That she snores",p:20},{t:"Her real age",p:16},{t:"Her salary or spending habits",p:10}]},
+  {q:"Name what most men would immediately do if a first date started describing her dream wedding.",a:[{t:"Run for the exit / bail",p:86},{t:"Listen politely",p:6},{t:"Smile awkwardly and say nothing",p:4},{t:"Excuse themselves to the bathroom",p:2}]},
+  {q:"Name something people always seem to lose.",a:[{t:"Their keys",p:46},{t:"Their phone",p:28},{t:"Their glasses / sunglasses",p:14},{t:"Their TV remote",p:8}]},
+  {q:"Name a real reason someone calls in sick when they're perfectly healthy.",a:[{t:"A hangover",p:36},{t:"Just needed a day off / laziness",p:30},{t:"Personal plans / a date",p:16},{t:"A mental health day",p:10}]},
+  {q:"Name something people do in a lift / elevator when completely alone.",a:[{t:"Check their phone",p:40},{t:"Stare at themselves in the mirror",p:24},{t:"Press buttons for no reason",p:16},{t:"Talk or sing to themselves",p:10}]},
+  {q:"Name something you'd definitely find on the floor of a teenager's bedroom.",a:[{t:"Clothes everywhere",p:42},{t:"Dirty dishes / snack wrappers",p:26},{t:"Charging cables and tech stuff",p:16},{t:"Empty bottles or cans",p:8}]},
+  {q:"Name a reason someone might be late to their own wedding.",a:[{t:"Cold feet / last-minute nerves",p:46},{t:"Traffic / transport problems",p:22},{t:"Hair, makeup or getting ready",p:16},{t:"Can't find the ring or outfit",p:8}]},
+  {q:"Name something people do when they feel extremely nervous.",a:[{t:"Sweat profusely",p:36},{t:"Bite their nails",p:26},{t:"Talk too much / ramble",p:18},{t:"Go to the toilet repeatedly",p:10}]},
+  {q:"Name something you start cleaning when procrastinating on something important.",a:[{t:"The kitchen / dishes",p:34},{t:"The bathroom",p:28},{t:"Your desk or workspace",p:16},{t:"Windows or mirrors",p:10}]},
+  {q:"Name something a dog does when it's overjoyed to see you come home.",a:[{t:"Wags its tail furiously",p:50},{t:"Jumps all over you",p:26},{t:"Barks or howls excitedly",p:14},{t:"Brings you a toy or gift",p:8}]},
+  {q:"Name something wedding guests love to complain about.",a:[{t:"The food (not enough or bad)",p:36},{t:"The music / DJ",p:28},{t:"The seating arrangement",p:16},{t:"The speeches going on too long",p:10}]},
+  {q:"Name a type of weather people complain about most.",a:[{t:"Rain",p:40},{t:"Extreme heat / humidity",p:28},{t:"Freezing cold",p:20},{t:"Gusty wind",p:8}]},
+  {q:"Name something people do at a party they deeply regret the next morning.",a:[{t:"Drink way too much",p:52},{t:"Dance embarrassingly",p:20},{t:"Say something stupid to someone",p:14},{t:"Send a message they shouldn't have",p:8}]},
+  {q:"Name something people do when they're bored.",a:[{t:"Scroll through their phone",p:42},{t:"Watch TV / stream something",p:26},{t:"Eat snacks",p:16},{t:"Sleep or nap",p:10}]},
+  {q:"Name a reason you'd feel embarrassed in a doctor's waiting room.",a:[{t:"Running into someone you know",p:38},{t:"Your name / condition called out loud",p:30},{t:"Your phone going off loudly",p:16},{t:"Making an embarrassing noise",p:8}]},
+  {q:"Name something you do before sleeping that you also do when you wake up.",a:[{t:"Check your phone",p:42},{t:"Brush your teeth",p:30},{t:"Go to the bathroom",p:16},{t:"Drink a glass of water",p:8}]},
+  {q:"Name something you take to the beach that you never actually end up using.",a:[{t:"A book",p:36},{t:"Sunscreen (stays in the bag)",p:28},{t:"Sports / exercise equipment",p:16},{t:"A magazine or puzzle",p:10}]},
+  {q:"Name something married couples argue about most often.",a:[{t:"Money / finances",p:42},{t:"Household chores",p:28},{t:"The in-laws",p:14},{t:"Parenting decisions",p:8}]},
+  {q:"Name something a diner does that makes everyone around them cringe.",a:[{t:"Talks loudly on their phone",p:36},{t:"Sends food back repeatedly",p:26},{t:"Lets children run wild around the restaurant",p:18},{t:"Burps loudly without apologising",p:10}]},
+  {q:"Name something people famously do in their sleep.",a:[{t:"Snore",p:55},{t:"Talk in their sleep",p:22},{t:"Sleepwalk",p:14},{t:"Grind their teeth",p:8}]},
+  {q:"Name a time of day when everyone seems to be in a terrible mood.",a:[{t:"Monday morning",p:46},{t:"Rush hour / commute time",p:28},{t:"Early morning before coffee",p:16},{t:"Late Sunday evening",p:8}]},
+  {q:"Name something people do when they think nobody is watching.",a:[{t:"Pick their nose",p:46},{t:"Dance or sing to themselves",p:26},{t:"Talk to themselves",p:14},{t:"Scratch themselves",p:8}]},
+  {q:"Name something you'd see on a table at a birthday party.",a:[{t:"A birthday cake",p:60},{t:"Balloons / decorations",p:20},{t:"Presents / gifts",p:12},{t:"Party poppers or streamers",p:6}]},
+  {q:"Name a reason someone might quit a job they just started.",a:[{t:"The boss / management is awful",p:44},{t:"The pay is terrible",p:34},{t:"The work environment / colleagues",p:16},{t:"The commute is unbearable",p:6}]},
+  {q:"When people can't afford to go out on a Saturday night, what do they do at home?",a:[{t:"Watch TV or a movie",p:46},{t:"Play games",p:26},{t:"Relax or sleep",p:16},{t:"Cook a nice meal",p:8}]},
+  {q:"What place do teenagers complain most about having to go to?",a:[{t:"School or college",p:55},{t:"Religious service",p:20},{t:"Family event",p:14},{t:"Doctor or dentist",p:8}]},
+  {q:"Why might someone leave a house through a window?",a:[{t:"Fire",p:52},{t:"Burglar or intruder",p:22},{t:"Sneaking out",p:16},{t:"Lost their key",p:8}]},
+  {q:"When someone discovers a mouse in the house, what do they do first?",a:[{t:"Set a trap",p:36},{t:"Scream",p:30},{t:"Run away",p:18},{t:"Call pest control",p:10}]},
+  {q:"What would you hate to run out of if you lived in a submarine?",a:[{t:"Air or oxygen",p:56},{t:"Water",p:22},{t:"Food",p:14},{t:"Toilet paper",p:8}]},
+  {q:"What is the biggest nuisance about camping?",a:[{t:"Bugs",p:42},{t:"Bad weather",p:28},{t:"No toilet or shower",p:18},{t:"Getting lost",p:8}]},
+  {q:"Name a place where people often become regulars.",a:[{t:"Bar or pub",p:46},{t:"Restaurant or cafe",p:30},{t:"Place of worship",p:14},{t:"Gym",p:8}]},
+  {q:"Name an animal that starts with the letter T.",a:[{t:"Tiger",p:56},{t:"Turtle or tortoise",p:20},{t:"Turkey",p:14},{t:"Tarantula",p:8}]},
+  {q:"If you entered an amateur talent contest, what might you do?",a:[{t:"Sing",p:56},{t:"Dance",p:26},{t:"Tell jokes",p:12},{t:"Play an instrument",p:7}]},
+  {q:"After a natural disaster, what do people rush out to buy?",a:[{t:"Water",p:46},{t:"Food",p:30},{t:"Flashlight",p:14},{t:"Batteries",p:8}]},
+  {q:"Name an animal best known for being black and white.",a:[{t:"Zebra",p:46},{t:"Panda",p:30},{t:"Skunk",p:16},{t:"Dalmatian",p:6}]},
+  {q:"What is a common complaint about city streets?",a:[{t:"Potholes or rough roads",p:40},{t:"Litter or dirt",p:28},{t:"Traffic",p:18},{t:"Poor lighting",p:8}]},
+  {q:"What should you never park in front of?",a:[{t:"A fire hydrant",p:50},{t:"A driveway",p:26},{t:"A disabled parking space",p:14},{t:"A hospital entrance",p:8}]},
+  {q:"Name a kind of pool.",a:[{t:"Swimming pool",p:56},{t:"Carpool",p:22},{t:"Pool table",p:14},{t:"Hot tub or whirlpool",p:8}]},
+  {q:"Name something you would hate to be inside when it breaks down.",a:[{t:"Car",p:40},{t:"Airplane",p:34},{t:"Elevator",p:16},{t:"Train or subway",p:8}]},
+  {q:"What would parents love to hypnotize their children into doing?",a:[{t:"Clean up",p:42},{t:"Listen or behave",p:30},{t:"Do homework",p:18},{t:"Go to bed on time",p:8}]},
+  {q:"Name something people brag about being really big.",a:[{t:"House or property",p:44},{t:"Car",p:28},{t:"TV",p:16},{t:"Boat",p:8}]},
+  {q:"What does a hospital patient hate seeing a nurse hold?",a:[{t:"A needle",p:60},{t:"A catheter",p:20},{t:"A bedpan",p:12},{t:"A very large pill",p:6}]},
+  {q:"Name something you might slide down.",a:[{t:"A slide or waterslide",p:56},{t:"A pole",p:22},{t:"A hill or slope",p:14},{t:"A banister or railing",p:8}]},
+  {q:"Who do you hate getting bad news from?",a:[{t:"A relative",p:36},{t:"A doctor",p:32},{t:"The tax office",p:16},{t:"Your boss",p:10}]},
+  {q:"What question do single people hate being asked?",a:[{t:"When are you getting married?",p:58},{t:"How old are you?",p:20},{t:"Are you dating anyone?",p:14},{t:"Why are you still single?",p:8}]},
+  {q:"Name a board game you are never too old to play.",a:[{t:"Monopoly",p:56},{t:"Scrabble",p:22},{t:"Checkers",p:14},{t:"Chess",p:8}]},
+  {q:"What do people always seem to run out of at a party?",a:[{t:"Drinks",p:46},{t:"Ice",p:28},{t:"Food",p:16},{t:"Cups or glasses",p:8}]},
+  {q:"Name something people do not mind asking a complete stranger for.",a:[{t:"Directions",p:56},{t:"The time",p:26},{t:"Change or a little money",p:12},{t:"A pen or pencil",p:6}]},
+  {q:"Name a place where it is perfectly acceptable to scream.",a:[{t:"An amusement park",p:52},{t:"A sports event",p:28},{t:"At home",p:14},{t:"A concert",p:8}]},
+  {q:"Why might you congratulate someone?",a:[{t:"Marriage or engagement",p:44},{t:"New job or promotion",p:28},{t:"New baby",p:16},{t:"Graduation",p:10}]},
+  {q:"Name something people hate waiting for.",a:[{t:"Public transport",p:40},{t:"The doctor",p:30},{t:"Food at a restaurant",p:18},{t:"A paycheck",p:8}]},
+  {q:"What do people arrive early for so they can get a good seat?",a:[{t:"A movie",p:40},{t:"A play or show",p:28},{t:"A concert",p:18},{t:"A sporting event",p:10}]},
+  {q:"Name a job where touching customers is part of the work.",a:[{t:"Doctor or dentist",p:46},{t:"Hairdresser or barber",p:28},{t:"Massage therapist",p:16},{t:"Tailor or seamstress",p:8}]},
+  {q:"What do kids do when their pet goldfish dies?",a:[{t:"Cry",p:46},{t:"Flush it",p:30},{t:"Bury it",p:14},{t:"Ask for a new one immediately",p:8}]},
+  {q:"Name a place where you should never use foul language.",a:[{t:"A place of worship",p:46},{t:"The workplace",p:28},{t:"Around small children",p:16},{t:"In a school",p:8}]},
+  {q:"Name something that people shed.",a:[{t:"Hair",p:52},{t:"Skin",p:22},{t:"Tears",p:16},{t:"Weight",p:8}]},
+  {q:"Name something people soak.",a:[{t:"Their feet",p:46},{t:"Clothes or laundry",p:28},{t:"Dishes",p:16},{t:"Dentures",p:8}]},
+  {q:"How do people warm up cold feet in bed?",a:[{t:"Put on socks",p:46},{t:"Rub them together",p:28},{t:"Use a blanket",p:16},{t:"Put them on a partner",p:8}]},
+  {q:"Name an animal that starts with the letter R.",a:[{t:"Rabbit",p:52},{t:"Rhinoceros",p:22},{t:"Raccoon",p:16},{t:"Rat",p:8}]},
+  {q:"Name your favourite thing to do at a party.",a:[{t:"Dance",p:42},{t:"Talk or mingle",p:28},{t:"Have a drink",p:18},{t:"Play games",p:8}]},
+  {q:"What is something people say is 'on the house'?",a:[{t:"A drink",p:60},{t:"Dessert",p:22},{t:"A meal",p:12},{t:"An appetiser or starter",p:6}]},
+  {q:"Name something that has a captain.",a:[{t:"A ship or boat",p:56},{t:"A sports team",p:26},{t:"A military unit",p:12},{t:"An airplane",p:6}]},
+  {q:"What do people hate seeing others do at a buffet or salad bar?",a:[{t:"Use their fingers",p:46},{t:"Sneeze or cough",p:30},{t:"Sample food and put it back",p:14},{t:"Take massive portions",p:8}]},
+  {q:"Name something that looks terrible when it gets wet.",a:[{t:"Hair",p:56},{t:"A dog or pet",p:22},{t:"Clothes or shoes",p:14},{t:"Cardboard or paper",p:6}]},
+  {q:"What is a bad job for someone who hates kids?",a:[{t:"Daycare worker",p:44},{t:"Teacher",p:30},{t:"Babysitter",p:16},{t:"School bus driver",p:8}]},
+  {q:"What part of a vacation usually costs the most?",a:[{t:"Hotel",p:42},{t:"Airfare",p:34},{t:"Food",p:14},{t:"Shopping or souvenirs",p:8}]},
+  {q:"When you get to a party, what can you not wait to do?",a:[{t:"Have a drink",p:44},{t:"Dance",p:28},{t:"Eat",p:18},{t:"Say hello to everyone",p:8}]},
+  {q:"Name something you would hate to find mold on.",a:[{t:"Food",p:46},{t:"Your body",p:26},{t:"The bathtub or tiles",p:16},{t:"Clothes or shoes",p:8}]},
+  {q:"Name a word you should never say at an airport.",a:[{t:"Bomb",p:68},{t:"Gun",p:16},{t:"Hijack",p:9},{t:"Terrorist",p:5}]},
+  {q:"What item with an 'out of order' sign would make you very unhappy?",a:[{t:"Toilet",p:52},{t:"ATM",p:26},{t:"Gas pump",p:14},{t:"Vending machine",p:8}]},
+  {q:"Name something that is better to do in the dark.",a:[{t:"Sleep",p:44},{t:"Kiss or cuddle",p:30},{t:"Watch a movie",p:16},{t:"Tell ghost stories",p:8}]},
+  {q:"Name something that people stretch.",a:[{t:"Legs or body",p:46},{t:"A rubber band",p:26},{t:"A budget or money",p:16},{t:"The truth",p:8}]},
+  {q:"Name something some people do not take off when they go to bed.",a:[{t:"Socks",p:52},{t:"Jewellery or a watch",p:28},{t:"Makeup",p:14},{t:"Underwear",p:8}]},
+  {q:"Name a fruit that tastes good dipped in chocolate.",a:[{t:"Strawberry",p:62},{t:"Banana",p:18},{t:"Cherry",p:12},{t:"Apple",p:6}]},
+];
+
+/* ═══════════════════════════════════════════════════════════
+   LOCAL STATE (read from localStorage, never mutated directly)
+═══════════════════════════════════════════════════════════ */
+let G = null;
+
+/* ═══════════════════════════════════════════════════════════
+   HELPERS (mirror of main board)
+═══════════════════════════════════════════════════════════ */
+const match          = () => G.bracket[G.currentMatch];
+const teamA          = () => G.teams[match().teamA];
+const teamB          = () => G.teams[match().teamB];
+const tName          = (ab) => ab === 'a' ? teamA() : teamB();
+const opp            = (ab) => ab === 'a' ? 'b' : 'a';
+const revealedPoints = () => G.q.a.reduce((s,ans,i) => s + (G.revealed[i] ? ans.p : 0), 0);
+const allRevealed    = () => G.revealed.every(Boolean);
+
+/* ═══════════════════════════════════════════════════════════
+   STATE LOADING
+═══════════════════════════════════════════════════════════ */
+function loadState() {
+  try {
+    const raw = localStorage.getItem('ff_state');
+    if (!raw) return false;
+    const s = JSON.parse(raw);
+    s.usedQ = new Set(s.usedQ);
+    G = s;
+    return true;
+  } catch(e) { return false; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   COMMAND DISPATCH — sends action to main board via localStorage
+   (storage events only fire in OTHER windows, so main board
+   will receive this and execute the real game function)
+═══════════════════════════════════════════════════════════ */
+function dispatch(cmd, args) {
+  localStorage.setItem('ff_cmd', JSON.stringify({cmd, args, ts: Date.now()}));
+}
+
+// Thin wrappers matching main board function signatures
+function selectQuestion(i)            { dispatch('selectQuestion', [i]); }
+function buzzWho(ab)                  { dispatch('buzzWho', [ab]); }
+function buzzAnswer(idx, isSecond)    { dispatch('buzzAnswer', [idx, isSecond]); }
+function choosePlayOrPass(c)          { dispatch('choosePlayOrPass', [c]); }
+function revealAnswer(i)              { dispatch('revealAnswer', [i]); }
+function addStrike()                  { dispatch('addStrike', []); }
+function stealGuess(i)                { dispatch('stealGuess', [i]); }
+function doAward()                    { dispatch('doAward', []); }
+function startNextRound()             { dispatch('startNextRound', []); }
+function endMatch()                   { dispatch('endMatch', []); }
+function setPhase(p)                  { dispatch('setPhase', [p]); }
+function resetGame()                  { dispatch('resetGame', []); }
+
+/* ═══════════════════════════════════════════════════════════
+   RESET CONFIRM UI
+═══════════════════════════════════════════════════════════ */
+function showResetConfirm() {
+  document.getElementById('qm-body').innerHTML = `
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:80%;padding:2rem;text-align:center;gap:1.2rem">
+      <div style="font-size:2.5rem">⚠️</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.8rem;color:var(--red);letter-spacing:.06em">Reset Game?</div>
+      <div style="font-size:.85rem;color:var(--muted);line-height:1.5;max-width:260px">
+        This clears all scores and returns to the setup screen.<br>The current match cannot be recovered.
+      </div>
+      <button class="btn btn-red btn-lg" style="width:100%;max-width:260px;margin-top:.4rem" onclick="confirmReset()">Yes — Reset Everything</button>
+      <button class="btn btn-outline" style="width:100%;max-width:260px" onclick="cancelReset()">Cancel</button>
+    </div>`;
+}
+
+function confirmReset() {
+  resetGame();    // dispatch command to main board
+  G = null;       // optimistically clear local state
+  render();       // show waiting screen immediately
+}
+
+function cancelReset() {
+  render();       // re-render whatever was showing before
+}
+
+/* ═══════════════════════════════════════════════════════════
+   CONNECTION STATUS
+═══════════════════════════════════════════════════════════ */
+function setStatus(live) {
+  const dot   = document.getElementById('status-dot');
+  const label = document.getElementById('status-label');
+  if (live) {
+    dot.className   = 'qm-status-dot live';
+    label.textContent = 'Live';
+  } else {
+    dot.className   = 'qm-status-dot waiting';
+    label.textContent = 'Waiting…';
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RENDER
+═══════════════════════════════════════════════════════════ */
+function render() {
+  if (!G || !G.currentMatch) {
+    setStatus(!!G);
+    showWaiting();
+    return;
+  }
+  setStatus(true);
+  renderQM();
+}
+
+function showWaiting() {
+  document.getElementById('qm-head-sub').textContent = 'Control Panel';
+  document.getElementById('qm-body').innerHTML = `
+    <div class="qm-waiting">
+      <div class="qm-waiting-icon">🎙</div>
+      <div class="qm-waiting-title">WAITING FOR MATCH</div>
+      <div class="qm-waiting-sub">Start a match on the main board.<br>Controls will appear here automatically.</div>
+      <div class="qm-waiting-hint">Both windows must be open in the same browser.</div>
+    </div>`;
+}
+
+function renderQM() {
+  const m = match();
+  document.getElementById('qm-head-sub').textContent =
+    `${G.currentMatch?.toUpperCase()} · Round ${G.round}`;
+
+  let html = '';
+
+  // ── Scores ──
+  html += `<div class="qm-section">
+    <div class="qm-sec-title">Match Score</div>
+    <div class="qm-score-row">
+      <div class="qm-score-box"><div class="qm-score-name">${teamA()}</div><div class="qm-score-val">${m.scoreA}</div></div>
+      <div class="qm-score-box"><div class="qm-score-name">${teamB()}</div><div class="qm-score-val">${m.scoreB}</div></div>
+    </div>`;
+  if (G.q) {
+    html += `<div class="qm-round-pts-lbl">Round Points on Board</div>
+    <div class="qm-round-pts">${revealedPoints()}</div>`;
+  }
+  html += '</div>';
+
+  // ── Answers (always visible when Q selected) ──
+  if (G.q && G.phase !== 'select_q') {
+    html += `<div class="qm-section"><div class="qm-sec-title">Answers (QM Eyes Only)</div>`;
+    G.q.a.forEach((ans, i) => {
+      const done = G.revealed[i];
+      html += `<div class="qm-answer-row ${done ? 'qma-revealed' : ''}">
+        <span class="qma-num">${i+1}</span>
+        <span class="qma-text">${ans.t}</span>
+        <span class="qma-pts">${ans.p}</span>
+        ${G.phase === 'playing' && !done
+          ? `<button class="qm-reveal-btn" onclick="revealAnswer(${i})">REVEAL</button>`
+          : `<span class="qm-reveal-btn done">${done ? '✓' : ''}</span>`}
+      </div>`;
+    });
+    html += '</div>';
+  }
+
+  html += '<div class="qm-divider"></div>';
+
+  // ── Phase-specific controls ──
+  if (G.phase === 'select_q') {
+    html += `<div class="qm-section"><div class="qm-sec-title">Select Question for Round ${G.round}</div>
+      <div class="q-pick-list">`;
+    Q_BANK.forEach((q, i) => {
+      const used = G.usedQ.has(i);
+      html += `<div class="q-pick-item ${used ? 'used' : ''}" onclick="${used ? '' : 'selectQuestion(' + i + ')'}">${i+1}. ${q.q}</div>`;
+    });
+    html += '</div></div>';
+  }
+
+  else if (G.phase === 'buzzer') {
+    if (G.bStep === 'who') {
+      html += `<div class="qm-section"><div class="qm-sec-title">⚡ Who Buzzed First?</div>
+        <div class="qm-ctrl-row">
+          <button class="btn btn-blue" onclick="buzzWho('a')">${teamA()}</button>
+          <button class="btn btn-blue" onclick="buzzWho('b')">${teamB()}</button>
+        </div></div>`;
+    }
+    else if (G.bStep === 'first_ans') {
+      html += `<div class="qm-section"><div class="qm-sec-title">${tName(G.bFirst)} answered:</div>
+        <div class="qm-ans-pick">`;
+      G.q.a.forEach((ans, i) => {
+        html += `<button class="btn btn-blue" onclick="buzzAnswer(${i}, false)"><strong>#${i+1}</strong> ${ans.t} (${ans.p}pts)</button>`;
+      });
+      html += `<button class="btn btn-red" onclick="buzzAnswer(-1, false)">✗ WRONG / Not on board</button>`;
+      html += '</div></div>';
+    }
+    else if (G.bStep === 'second_ans') {
+      const buzzedPrev = G.bFirstAns >= 0 ? `#${G.bFirstAns+1} already revealed.` : 'Wrong answer.';
+      html += `<div class="qm-note">${tName(G.bFirst)}: ${buzzedPrev}<br>${tName(opp(G.bFirst))}'s turn to answer:</div>
+        <div class="qm-section"><div class="qm-ans-pick">`;
+      G.q.a.forEach((ans, i) => {
+        const alreadyRevealed = G.revealed[i];
+        html += `<button class="btn btn-blue ${alreadyRevealed ? 'btn-disabled' : ''}" onclick="buzzAnswer(${i}, true)"><strong>#${i+1}</strong> ${ans.t} (${ans.p}pts)${alreadyRevealed ? ' ✓' : ''}</button>`;
+      });
+      html += `<button class="btn btn-red" onclick="buzzAnswer(-1, true)">✗ WRONG / Not on board</button>`;
+      html += '</div></div>';
+    }
+    else if (G.bStep === 'done') {
+      html += `<div class="qm-note">🎯 Control: <strong>${tName(G.bControl)}</strong></div>
+        <div class="qm-section"><div class="qm-sec-title">${tName(G.bControl)}: Play or Pass?</div>
+        <div class="qm-ctrl-row">
+          <button class="btn btn-green" onclick="choosePlayOrPass('play')">▶ PLAY</button>
+          <button class="btn btn-red" onclick="choosePlayOrPass('pass')">↩ PASS</button>
+        </div></div>`;
+    }
+  }
+
+  else if (G.phase === 'playing') {
+    html += `<div class="qm-section"><div class="qm-sec-title">${tName(G.playingTeam)} is playing</div>
+      <div class="qm-note">Click REVEAL when they name a correct answer.<br>Click STRIKE for a wrong answer.</div>
+      <div class="qm-ctrl-row" style="margin-top:.5rem">
+        <button class="btn btn-red" onclick="addStrike()">✗ STRIKE (${G.strikes}/2)</button>
+      </div>`;
+    if (G.strikes >= 2) {
+      html += `<div class="qm-divider"></div>
+        <div class="qm-note" style="border:1px solid var(--red)">2 strikes! Offer steal to <strong>${tName(G.stealTeam)}</strong></div>
+        <button class="btn btn-red btn-lg" style="width:100%;margin-top:.4rem" onclick="setPhase('steal')">⚡ GO TO STEAL →</button>`;
+    }
+    if (allRevealed()) {
+      html += `<div class="qm-divider"></div>
+        <button class="btn btn-green btn-lg" style="width:100%" onclick="setPhase('award_playing')">All Revealed — Award to ${tName(G.playingTeam)}</button>`;
+    }
+    html += '</div>';
+  }
+
+  else if (G.phase === 'steal') {
+    html += `<div class="qm-section"><div class="qm-sec-title">⚡ STEAL — ${tName(G.stealTeam)}</div>
+      <div class="qm-note">One guess only! Select what they said:</div>
+      <div class="qm-ans-pick">`;
+    G.q.a.forEach((ans, i) => {
+      const alreadyRevealed = G.revealed[i];
+      html += `<button class="btn btn-blue ${alreadyRevealed ? 'btn-disabled' : ''}" onclick="stealGuess(${i})"><strong>#${i+1}</strong> ${ans.t} (${ans.p}pts)${alreadyRevealed ? ' ✓ already revealed' : ''}</button>`;
+    });
+    html += `<button class="btn btn-red" onclick="stealGuess(-1)">✗ WRONG — Playing team keeps points</button>`;
+    html += '</div></div>';
+  }
+
+  else if (G.phase === 'award_playing' || G.phase === 'award_steal') {
+    const winner = G.phase === 'award_steal' ? G.stealTeam : G.playingTeam;
+    const pts = revealedPoints();
+    html += `<div class="qm-section">
+      <div class="qm-sec-title">Award Points</div>
+      <div class="qm-note" style="font-size:1rem;text-align:center;padding:1rem">
+        <strong>${tName(winner)}</strong><br>wins <span style="color:var(--gold);font-size:1.5rem;font-weight:700">${pts} points</span>
+      </div>
+      <button class="btn btn-gold btn-lg" style="width:100%" onclick="doAward()">✓ CONFIRM & AWARD</button>
+    </div>`;
+  }
+
+  else if (G.phase === 'between_rounds') {
+    html += `<div class="qm-section">
+      <div class="qm-sec-title">Round ${G.round} Complete</div>
+      <div class="qm-score-row">
+        <div class="qm-score-box"><div class="qm-score-name">${teamA()}</div><div class="qm-score-val">${m.scoreA}</div></div>
+        <div class="qm-score-box"><div class="qm-score-name">${teamB()}</div><div class="qm-score-val">${m.scoreB}</div></div>
+      </div>
+      <button class="btn btn-gold btn-lg" style="width:100%;margin-top:.8rem" onclick="startNextRound()">▶ START ROUND ${G.round + 1}</button>
+    </div>`;
+  }
+
+  else if (G.phase === 'match_end') {
+    const winner = m.scoreA >= m.scoreB ? teamA() : teamB();
+    html += `<div class="qm-section">
+      <div class="qm-sec-title">Match Complete!</div>
+      <div class="qm-score-row">
+        <div class="qm-score-box"><div class="qm-score-name">${teamA()}</div><div class="qm-score-val">${m.scoreA}</div></div>
+        <div class="qm-score-box"><div class="qm-score-name">${teamB()}</div><div class="qm-score-val">${m.scoreB}</div></div>
+      </div>
+      <div class="qm-note" style="text-align:center;margin-top:.5rem"><strong>${winner}</strong> advances!</div>
+      <button class="btn btn-gold btn-lg" style="width:100%;margin-top:.8rem" onclick="endMatch()">→ BACK TO BRACKET</button>
+    </div>`;
+  }
+
+  document.getElementById('qm-body').innerHTML = html;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   INIT & STORAGE EVENTS
+═══════════════════════════════════════════════════════════ */
+
+// When main board updates or clears state, re-render QM
+window.addEventListener('storage', (e) => {
+  if (e.key === 'ff_state') {
+    if (e.newValue === null) {
+      // Game was reset — state removed from localStorage
+      G = null;
+      render();
+    } else if (loadState()) {
+      render();
+    } else {
+      G = null;
+      render();
+    }
+  }
+});
+
+// Initial load on page open
+if (loadState()) {
+  render();
+} else {
+  setStatus(false);
+}
+</script>
+</body>
+</html>
